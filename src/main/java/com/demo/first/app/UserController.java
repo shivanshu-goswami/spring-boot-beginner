@@ -42,8 +42,56 @@ public class UserController {
            //no content will give status code 204 which is used in this place
            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         }
+    //two url mapped to one annotation i.e, both endpoint can be written into
+    //one annotation this way
+    //@GetMapping({"/user","/{userId}"})
+
     @GetMapping
     public List<User> getUsers() {
         return new ArrayList<User>(userDb.values());
+    }
+    @GetMapping("/{userId}")
+    public ResponseEntity<User> getUser(
+            @PathVariable(value="userId", required = false) int id) {
+              if(!userDb.containsKey(id)){
+                  return ResponseEntity.notFound().build();
+              }
+              return ResponseEntity.ok(userDb.get(id));
+    }
+
+    @GetMapping("/{userId}/order/{orderId}")
+    public ResponseEntity<User> getUserOrder(
+            @PathVariable("userId") int id,
+            @PathVariable int orderId
+    ){
+        System.out.println("ORDER_ID : " + orderId);
+        if(!userDb.containsKey(id)){
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userDb.get(id));
+    }
+
+    //RequestParam
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsers(
+            @RequestParam(required=false,defaultValue ="Shivanshu" ) String name,
+            @RequestParam(required=false, defaultValue = "email") String email
+    ){
+        System.out.println(name);
+        List<User> users = userDb.values().stream()
+                .filter(u->u.getName().equalsIgnoreCase(name))
+                .filter(u->u.getEmail().equalsIgnoreCase(email))
+                .toList();
+        return ResponseEntity.ok(users);
+    }
+
+    //request header and combining it with path variable and request param
+    @GetMapping("/info/{id}")
+    public String getInfo(
+            @PathVariable int id,
+            @RequestParam String name,
+            @RequestHeader("User-Agent") String userAgent
+    ){
+        return "userAgent: " + userAgent +" : " + id + " : " + name;
     }
 }
