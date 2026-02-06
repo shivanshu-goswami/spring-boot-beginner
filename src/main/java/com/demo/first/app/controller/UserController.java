@@ -1,10 +1,12 @@
-package com.demo.first.app;
+package com.demo.first.app.controller;
 
+import com.demo.first.app.model.User;
+import com.demo.first.app.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,35 +14,35 @@ import java.util.Map;
 @RestController
 @RequestMapping("/user")
 public class UserController {
-    private Map<Integer,User> userDb = new HashMap<Integer,User>();
+    private UserService userService=new UserService();
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user){
-        System.out.println(user.getEmail());
-        userDb.putIfAbsent(user.getId(),user);
-        //return ResponseEntity.status(HttpStatus.CREATED).body(user);
-        return new ResponseEntity<>(user,HttpStatus.CREATED);
+        User createdUser= userService.createUser(user);
+        return new ResponseEntity<>(createdUser,HttpStatus.CREATED);
     }
 
     @PutMapping
     public ResponseEntity<User> updateUser(@RequestBody User user) {
-        if (!userDb.containsKey(user.getId())) {
-           // return ResponseEntity.notFound().build();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            User updated= userService.updateUser(user);
+            if(updated==null){
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        //return ResponseEntity.status(HttpStatus.OK).body(user);
-        return ResponseEntity.ok(user);
+
+        return ResponseEntity.ok(updated);
     }
     // /user/1   /user/2  /user/3
     @DeleteMapping("/{id}")
         public ResponseEntity<String> deleteUser(@PathVariable int id) {
-           if(!userDb.containsKey(id)) {
+           Boolean isdeleted= userService.deleteUser(id);
+           if(!isdeleted){
                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
            }
-           userDb.remove(id);
-           //return ResponseEntity.noContent().build();
-           //no content will give status code 204 which is used in this place
-           return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+           return ResponseEntity.noContent().build();
         }
     //two url mapped to one annotation i.e, both endpoint can be written into
     //one annotation this way
@@ -48,15 +50,17 @@ public class UserController {
 
     @GetMapping
     public List<User> getUsers() {
-        return new ArrayList<User>(userDb.values());
+        return userService.getAllUsers();
     }
+
     @GetMapping("/{userId}")
     public ResponseEntity<User> getUser(
             @PathVariable(value="userId", required = false) int id) {
-              if(!userDb.containsKey(id)){
-                  return ResponseEntity.notFound().build();
-              }
-              return ResponseEntity.ok(userDb.get(id));
+        User user= userService.getUserById(id);
+        if(user==null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+              return ResponseEntity.ok(user);
     }
 
     @GetMapping("/{userId}/order/{orderId}")
@@ -64,11 +68,11 @@ public class UserController {
             @PathVariable("userId") int id,
             @PathVariable int orderId
     ){
-        System.out.println("ORDER_ID : " + orderId);
-        if(!userDb.containsKey(id)){
-            return ResponseEntity.notFound().build();
+        User user= userService.getUserById(id);
+        if(user==null){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok(userDb.get(id));
+        return ResponseEntity.ok(user);
     }
 
     //RequestParam
@@ -77,12 +81,8 @@ public class UserController {
             @RequestParam(required=false,defaultValue ="Shivanshu" ) String name,
             @RequestParam(required=false, defaultValue = "email") String email
     ){
-        System.out.println(name);
-        List<User> users = userDb.values().stream()
-                .filter(u->u.getName().equalsIgnoreCase(name))
-                .filter(u->u.getEmail().equalsIgnoreCase(email))
-                .toList();
-        return ResponseEntity.ok(users);
+
+        return ResponseEntity.ok(userService.searchUsers(name,email));
     }
 
     //request header and combining it with path variable and request param
@@ -94,4 +94,6 @@ public class UserController {
     ){
         return "userAgent: " + userAgent +" : " + id + " : " + name;
     }
+
+
 }
