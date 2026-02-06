@@ -1,5 +1,8 @@
 package com.demo.first.app.exceptions;
 
+import com.demo.first.app.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -12,6 +15,7 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final Logger logger = LoggerFactory.getLogger(UserService.class);
     //Exception Handling Method
     //poori application mai jaha bhi yeh illegal arg exception aaye, tab yeh method
     //trigger ho uske liye exception handler wali annotation add ki gyi hai
@@ -40,6 +44,7 @@ public class GlobalExceptionHandler {
             //  IllegalArgumentException exception ->since 2 exception class present so use Generic "Exception" class for object which is actually a parent class
             Exception exception
     ){
+        logger.error("Error when finding user : ",exception);
         Map<String,Object> errorResponse=new HashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now());
         errorResponse.put("status", HttpStatus.METHOD_NOT_ALLOWED.value());

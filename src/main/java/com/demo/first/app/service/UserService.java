@@ -32,6 +32,8 @@ public class UserService {
 
     public  User updateUser(User user) {
         if (!userDb.containsKey(user.getId())) {
+            //user.getId() will get placed in this {} placeholder
+            logger.error("Error when finding user with id {}",user.getId());
             throw new UserNotFoundException("User with id " + user.getId() + " does not exist");
         }
         userDb.put(user.getId(), user);
